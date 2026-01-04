@@ -29,9 +29,8 @@ def run_simulation(scenarios, days=120):
     
     results = {}
     for sc in tqdm(scenarios, desc="Running simulations", unit="scenario"):
-        # Initial State: [Vitality: 98%, Corruption: 15%, Scales: 0%]
         # Starting with heavy exposure to a Withering Zone
-        y0 = [85.0, 18.0, 10.0]
+        y0 = [90.0, 30.0, 7.0]
         sol = odeint(eleazar_model, y0, t, args=(sc['age'], sc['vision'], base_params))
         results[sc['name']] = sol
     
