@@ -81,6 +81,7 @@ def plot_viterbi_trellis(obs_sequence, states, best_path_indices, output_path=No
     if output_path:
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
         plt.close()
+        return None
     else:
-        plt.savefig(output_path, dpi=150, bbox_inches='tight')
-        plt.close()
+        # Return the figure for use in interactive contexts (e.g., Gradio)
+        return plt.gcf()
