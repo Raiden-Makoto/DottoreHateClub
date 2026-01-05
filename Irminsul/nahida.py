@@ -9,7 +9,8 @@ def trikarma_purification(
     obs_sequence: str,
     base_matrix: np.ndarray = BASE_MATRIX,
     emission_matrix: np.ndarray = EMISSION_MATRIX,
-    states: list[str] = ELEMENTS
+    states: list[str] = ELEMENTS,
+    return_indices: bool = False
 ):
     """
     Restores the true elemental sequence from a withered record.
@@ -52,4 +53,6 @@ def trikarma_purification(
     for t in range(n_obs-2, -1, -1):
         best_path[t] = backpointer[best_path[t+1], t+1]
 
+    if return_indices:
+        return [states[s] for s in best_path], best_path
     return [states[s] for s in best_path]

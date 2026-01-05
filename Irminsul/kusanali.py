@@ -1,10 +1,13 @@
+import os
 try:
     from .nahida import trikarma_purification
-    from .constants import OBS_MAP
+    from .constants import OBS_MAP, ELEMENTS
+    from .trellis import plot_viterbi_trellis
 except ImportError:
     # Allow running as a script
     from nahida import trikarma_purification
-    from constants import OBS_MAP
+    from constants import OBS_MAP, ELEMENTS
+    from trellis import plot_viterbi_trellis
 
 def kusanali():
     """
@@ -25,11 +28,16 @@ def kusanali():
     withered_indices = [OBS_MAP[c] for c in withered_record]
 
     # Use Nahida's Elemental Skill
-    purified = trikarma_purification(withered_indices)
+    purified, path_indices = trikarma_purification(withered_indices, return_indices=True)
 
     print(f"Original: {pure_record}")
     print(f"Withered: {withered_record}")
     print(f"Restored: {''.join(purified)}")
+    
+    # Plot the trellis diagram
+    output_path = os.path.join(os.path.dirname(__file__), 'viterbi_trellis.png')
+    plot_viterbi_trellis(withered_record, ELEMENTS, path_indices, output_path, pure_record)
+    print(f"Trellis diagram saved to: {output_path}")
 
 if __name__ == "__main__":
     kusanali()

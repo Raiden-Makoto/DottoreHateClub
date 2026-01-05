@@ -29,48 +29,9 @@ To restore corrupted records, we implemented the Viterbi algorithm in log-probab
 > Process: The algorithm calculates the globally most likely "True" path through the state-space [trellis](#footnote-trellis).    
 > Output: A restored elemental sequence.    
 
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffcccc', 'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#f4f4f4'}}}%%
-%% The Viterbi "Cleansing" Trellis (Small Example)
-%% This diagram shows the algorithm finding the most likely sequence of hidden elements (the path in green) that would produce the observed corrupted record.
-graph LR
-    %% ---- DEFINING THE TIME STEPS & OBSERVATIONS ----
-    subgraph T0 ["Time t=0, Observed: W (Withered)"]
-        P0(Hidden: Pyro)
-        H0(Hidden: Hydro)
-    end
-    
-    subgraph T1 ["Time t=1, Observed: P (Pyro)"]
-        P1(Hidden: Pyro)
-        H1(Hidden: Hydro)
-    end
+![Viterbi Trellis Reconstruction](viterbi_trellis.png)
 
-    %% ---- INITIALIZATION (t=0) ----
-    %% The algorithm calculates the initial probability of starting in each state
-    Start((Start)) -.->|Prob: Low| P0
-    Start((Start)) ==>|Prob: High| H0
-    %% Note: H0 is selected as the more likely starting point based on emission probs of 'W'
-
-    %% ---- RECURSION (t=0 to t=1) ----
-    %% It calculates prob of moving to next states from previous best states
-    %% Thin dotted lines are discarded paths with lower probabilities
-    P0 -.-> P1
-    P0 -.-> H1
-    
-    %% Thick solid lines are the "winning" transitions chosen at each step
-    %% The path H0 -> P1 is chosen because the combined probability of
-    %% (being in H0) * (transitioning H->P) * (emitting 'P' from P) was highest.
-    H0 ==> P1
-    H0 -.-> H1
-
-    %% ---- HIGHLIGHTING THE FINAL PATH ----
-    classDef selected fill:#69b3a2,stroke:#333,stroke-width:3px,color:white,font-weight:bold;
-    class H0,P1 selected;
-
-    %% Legend pointing to the final result
-    Goal[Final Restored Path: Hydro → Pyro] --- P1
-    style Goal fill:#fff,stroke:none,font-style:italic
-```
+*The trellis diagram shows the Viterbi algorithm finding the most likely sequence of hidden elements (green path) that would produce the observed corrupted record. When the original pure record differs from the reconstruction, it is shown as a blue dashed line for comparison.*
 
 3. **Numerical Stability:**
 To handle "Forbidden" transitions (zero probability events), we utilized Laplace Smoothing and $\epsilon$-constants, preventing logarithmic underflow while maintaining the strict logic of the elemental system.
