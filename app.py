@@ -1,7 +1,10 @@
 import gradio as gr # type: ignore
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import odeint
 from Irminsul import trikarma_purification, ELEMENTS, OBS_MAP
 from Irminsul.trellis import plot_viterbi_trellis
+from Eleazar.eleazar import eleazar_model
 
 def reconstruct_irminsul(pure_input, withered_input):
     # 1. Validation & Truncation for pure sequence
@@ -52,6 +55,64 @@ def reconstruct_irminsul(pure_input, withered_input):
     output_text = reconstructed_str + accuracy_info
     return output_text, fig
 
+def simulate_triple_comparison(u_name, u_age, u_vision, initial_scenario):
+    """
+    Compare custom character against Collei and Dunyarzad using the actual Eleazar model.
+    Uses the real eleazar_model function from the Eleazar package.
+    """
+    # Initial condition scenarios
+    initial_conditions = {
+        "Heavy": [84.0, 20.0, 12.0],  # V_0, C_0, S_0
+        "Medium": [86.0, 12.0, 8.0],
+        "Light": [90.0, 5.0, 2.0]
+    }
+    
+    y0 = initial_conditions[initial_scenario]
+    
+    # Define benchmark scenarios
+    scenarios = [
+        {"name": "Collei (Young, Dendro Vision)", "age": 18, "vision": True, "color": "#a6c938"},
+        {"name": "Dunyarzad (Elderly, No Vision)", "age": 65, "vision": False, "color": "#ef7a35"},
+        {"name": f"{u_name} (Custom)", "age": int(u_age), "vision": bool(u_vision), "color": "#3498db"}
+    ]
+    
+    # Base parameters from Eleazar solver
+    base_params = [0.12, 0.06, 0.22, 0.04, 0.08]  # [regen, drain, corruption_rate, scale_drag, ossification]
+    t = np.linspace(0, 120, 1200)
+    
+    # Run simulation for each scenario using actual Eleazar model
+    results = {}
+    for sc in scenarios:
+        sol = odeint(eleazar_model, y0, t, args=(sc['age'], sc['vision'], base_params))
+        results[sc['name']] = sol
+    
+    # Create visualization
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    
+    for sc in scenarios:
+        data = results[sc['name']]
+        ax1.plot(t, data[:, 0], label=f"{sc['name']} - Vitality", color=sc['color'], linewidth=2)
+        ax2.plot(t, data[:, 2], label=f"{sc['name']} - Scales", color=sc['color'], linewidth=2)
+        # Also show corruption for custom character
+        if sc['name'] == f"{u_name} (Custom)":
+            ax1.plot(t, data[:, 1], label=f"{sc['name']} - Corruption", color=sc['color'], linestyle="--", alpha=0.6)
+    
+    # Aesthetics
+    ax1.set_ylabel("Vitality (%)")
+    ax1.set_title(f"Eleazar: Vitality Dynamics (Gavrilov Reliability) - Comparison\nInitial: {initial_scenario} (V={y0[0]:.1f}%, C={y0[1]:.1f}%, S={y0[2]:.1f}%)")
+    ax1.axhline(15, color='black', linestyle=':', label="Critical Failure Threshold", alpha=0.5)
+    ax1.legend()
+    ax1.grid(alpha=0.3)
+    
+    ax2.set_ylabel("Petrification (Scales %)")
+    ax2.set_xlabel("Days Since Exposure")
+    ax2.set_title("Eleazar Physical Progression")
+    ax2.legend()
+    ax2.grid(alpha=0.3)
+    
+    plt.tight_layout()
+    return fig
+
 # --- Gradio Interface ---
 # Use darker Collei green (#6b8a26) for theme
 custom_theme = gr.themes.Soft(
@@ -71,7 +132,7 @@ custom_theme = gr.themes.Soft(
 )
 
 with gr.Blocks(theme=custom_theme) as demo:
-    gr.Markdown("# Project Pure-Flux: Forensic Dashboard")
+    gr.Markdown("# A mathematical analysis of biological systems in *Genshin Impact*")
     
     with gr.Tab("Phase 1: Irminsul Recovery"):
         gr.Markdown("## Project Overview")
@@ -103,7 +164,44 @@ with gr.Blocks(theme=custom_theme) as demo:
         btn_run.click(fn=reconstruct_irminsul, inputs=[txt_pure, txt_withered], outputs=[txt_output, plot_output])
 
     with gr.Tab("Phase 2: Eleazar Kinetics"):
-        gr.Markdown("Coming soon: Gavrilov Reliability ODE Solver...")
+        gr.Markdown("## Project Overview")
+        gr.Markdown(
+            "**Eleazar** is a terminal condition caused by the *Withering* manifesting in human hosts. "
+            "This project applies a modified version of the **Reliability Theory of Aging** (Gavrilov Model) "
+            "to simulate the competition between cellular vitality and Abyssal contamination.\n\n"
+            "We treat the human body as a system of redundant components. "
+            "Failure (Eleazar) occurs when the \"redundancy reserve\" is exhausted. "
+            "The *Gompertz-Makeham Law* is used to define the base mortality and age-dependent decay of a patient. "
+            "We also account for the effects of a *Vision*, which we mathematically define as a redundancy buffer, "
+            "providing a \"metabolic floor\" that prevents the exponential \"avalanche of failures\" typical in terminal Eleazar cases.\n\n"
+            "You can compare your custom character against two canonical Eleazar patients: Collei (young Vision holder) and Dunyarzad "
+            "(elderly non-Vision holder) using the Gavrilov Reliability ODE model."
+        )
+        
+        with gr.Row():
+            with gr.Column():
+                char_name = gr.Textbox(label="Character Name", value="Traveler")
+                age_slide = gr.Slider(10, 90, value=20, step=1, label="Subject Age")
+                vis_check = gr.Checkbox(label="Possesses Vision", value=False)
+                initial_scenario = gr.Radio(
+                    choices=["Heavy", "Medium", "Light"],
+                    value="Heavy",
+                    label="Initial Contamination"
+                )
+                run_btn = gr.Button("Analyze Reliability", variant="primary")
+                
+            with gr.Column():
+                plot_out = gr.Plot()
+                plot_caption_eleazar = gr.Markdown(
+                    "*Note: by changing the initial starting parameters, we can get different scenarios, "
+                    "where all patients recover or non Vision holders failing to recover. By selecting Scenario 1, we demonstrate "
+                    "the power of having a Vision in providing accelerated regeneration and contamination resistance, "
+                    "allowing **Collei** to fully recover despite having high initial contamination.*"
+                )
+
+        run_btn.click(simulate_triple_comparison, 
+                     inputs=[char_name, age_slide, vis_check, initial_scenario], 
+                     outputs=plot_out)
 
     with gr.Tab("Phase 3: Delusion Toxicity"):
         gr.Markdown("Coming soon: Linear Programming Death Boundary...")
