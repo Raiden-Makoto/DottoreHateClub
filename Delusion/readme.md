@@ -1,28 +1,52 @@
 # Phase 3: Linear Programming and the "Human Tax" Optimization
 ## Project Overview
-This project utilizes Linear Programming (LP) to quantify the active destruction caused by Delusion usage. By treating a subject's biological life force as a non-renewable resource, we mathematically prove that Delusion technology is a guaranteed death sentence for standard humans. **DO NOT EXPERIMENT ON HUMANS, DOTTORE**
+This project utilizes Constrained Optimization to quantify the active destruction caused by Delusion usage. We have evolved from basic decay models to a Combat Meta-Simulation that treats a subject's biological life force as a non-renewable currency used to "purchase" damage output.
 
-## Problem Setup
-We move from differential equations to Constrained Optimization using `scipy.optimize.linprog`.
-The goal is to maximize "Combat Duration" while staying within the narrow "Feasibility Region" defined by biological failure points. We introduce two key constants:
+## Problem Setup: The MILP Backend
 
-1. The Mastery-Efficiency Coefficient ($\eta$):       
-To differentiate between the "Disposable Agents" and the "Fatui Harbingers," we introduce a Mastery Coefficient.
-- High Mastery (Arlecchino-tier): Minimal energy leakage; 90% of the Delusion's output is converted to elemental flux (active flow of elemental energy through a biological system), leaving only 10% as biological waste.
-- Low Mastery (NPC/Agent-tier): Massive "waste-flux" (up to 99%) that cooks internal systems and exhausts redundancy reserves instantly.
+We utilize `scipy.optimize.linprog` with integrality constraints to solve for the most bio-efficient combat rotation (Normal Attacks, Skills, and Bursts).
 
-2. The Vision-Damping Factor ($\zeta$):      
-A Vision acts as a "Biological Grounding Wire". In our LP model, this provides a Damping Coefficient that reduces the cost of every second spent in a Delusion state, effectively stretching the "survival fences" outward.
+### Adaptive Optimization Parameters
+
+To reflect lore-accurate combat mastery, the model now maps the Mastery-Efficiency Coefficient ($\eta$) to the following mechanical variables:
+
+- **Skill Cooldown ($CD$)**: Ranges from 12s (Low Mastery) to 7s (High Mastery).
+- **Burst Energy Requirement ($Q_{req}$)**: Ranges from 90 to 80 energy.
+- **Energy Generation ($E_{gen}$)**: Scales from 10 to 40 energy per Skill, representing the subject's ability to capture elemental flux.
+- **Vision-Damping Factor ($\zeta$)**: Acts as a 1.5x Energy Multiplier and provides a 0.05 safety grounding that reduces biological waste.
 
 ## Results
-Our simulation identifies a brutal Bifurcation Point in human survivability:
-- *The Mastery Monopoly:* Survival time remains effectively zero for any subject with an efficiency score below 80%. This proves that only the absolute elite can survive Dottore's technology.
-- *The Child Paradox:* Subjects aged 10–14 show a slight "uplift" in survival despite low efficiency. This can be explained by the fact that children possess high Initial Redundancy ($R$)—a larger biological "buffer" that Dottore systematically exploits as fuel.
-- *The Mortality Cliff:* As age increases, the starting "Life Budget" ($R$) drops exponentially. An elderly subject, even with elite mastery, faces a significantly smaller operating window than a younger peer.
 
-![Delusion Survival Heatmap](delusion_heatmap.png)
+Our simulations against high-HP "Boss" targets reveal three critical findings:
 
-*The 3D surface plot shows the maximum survival time (in minutes) as a function of subject age and combat mastery efficiency. The "Death Boundary" represents the feasibility region where Delusion use becomes fatal.*
+### 1. The Energy-Redundancy Trap
+
+For non-Vision holders (NPCs), the "Human Tax" to generate 80 energy exceeds their total Gavrilov Redundancy ($R$).
+
+- **Result**: NPCs are mathematically barred from using Elemental Bursts.
+- **Observation**: Attempting a single Burst triggers a 350x toxicity spike that consumes up to 80% of their life budget in 5 seconds.
+
+### 2. The Harbinger "Survival Ridge"
+
+Harbingers like Arlecchino occupy a unique mathematical plateau.
+
+- **Efficiency Advantage**: At $\eta=0.95$, the "Waste Factor" is so low that the subject can afford multiple high-flux rotations.
+- **Temporal Bottleneck**: Their only limit is the Time Constraint (90s), not biological failure.
+
+### 3. The Mortality Cliff (Skull Analysis)
+
+As shown in our 2D/3D visualizations, there is a Bifurcation Point at $\eta \approx 0.7$.
+
+- **$\eta < 0.7$**: Total system failure. The solver returns "Infeasible", marked on our plots with a skull (☠) to indicate immediate biological liquidation.
+- **$\eta > 0.7$**: The subject enters the Survival Ridge, where victory is possible at the cost of permanent, but non-fatal, redundancy loss.
+
+![Delusion Survival Heatmap](heatmap.png)
+
+*The 3D surface plot shows biological redundancy as a function of mastery efficiency and combat load (boss HP). The "Death Valley" at 0.15 represents the critical failure threshold where Delusion use becomes fatal.*
+
+![Delusion Forensic Analysis](delusion_forensic_plot.png)
+
+*The forensic plot shows cumulative biological cost vs. combat output for different subject classes. Each line represents a character's survivability curve, with skull markers (☠) indicating biological collapse points. The red dashed lines mark critical thresholds at 0% (baseline) and 15% (critical instability).*
 
 ## Conclusion
-We conclude that Dottore’s "segments" and "delusions" rely on a Negative Feasibility Region for standard humans. By defining the Vision-Damping Coefficient and Mastery Tiers, we have mathematically exposed a system designed to treat human souls as disposable high-flux batteries.
+Delusion technology is a predatory resource-extraction system. It is mathematically impossible for standard humans to achieve the energy recharge required for high-flux actions (Bursts) without immediate systemic liquidation.
