@@ -1,4 +1,7 @@
-from delusion import activate_delusion
+try:
+    from .delusion import activate_delusion
+except ImportError:
+    from Delusion.delusion import activate_delusion
 
 subjects = [
     {"name": "Childe", "age": 23, "vis": True, "eff": 0.65, "color": "#e67e22"},

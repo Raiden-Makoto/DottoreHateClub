@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import odeint
+from mpl_toolkits.mplot3d import Axes3D
 from Irminsul import trikarma_purification, ELEMENTS, OBS_MAP
 from Irminsul.trellis import plot_viterbi_trellis
 from Eleazar.eleazar import eleazar_model
+from Delusion.delusion import activate_delusion
 
 def reconstruct_irminsul(pure_input, withered_input):
     # 1. Validation & Truncation for pure sequence
@@ -111,3 +113,136 @@ def simulate_triple_comparison(u_name, u_age, u_vision, initial_scenario):
     
     plt.tight_layout()
     return fig
+
+def generate_phase3_plots(name, age, has_vision, efficiency, boss_hp):
+    """
+    Generate 2D comparison plot and 3D survival ridge for Phase 3: Delusion Toxicity
+    """
+    age = int(age)
+    efficiency = float(efficiency)
+    boss_hp = float(boss_hp)
+    
+    # --- 1. Generate 2D Comparison Plot ---
+    fig2d, ax2d = plt.subplots(figsize=(10, 6))
+    hp_range = np.linspace(10000, boss_hp * 1.5, 20)
+    
+    # Benchmark subjects: Childe, Arlecchino, and NPC
+    benchmarks = [
+        {"name": "Childe", "age": 23, "vis": True, "eff": 0.65, "color": "#e67e22"},
+        {"name": "Arlecchino", "age": 30, "vis": True, "eff": 0.95, "color": "#c0392b"},
+        {"name": "Foolish NPC", "age": 16, "vis": False, "eff": 0.05, "color": "#7f8c8d"}
+    ]
+    
+    # Plot benchmarks
+    for bench in benchmarks:
+        costs = []
+        hps = []
+        budget = np.exp(-0.012 * bench["age"]) - 0.15
+        
+        for hp in hp_range:
+            cost = activate_delusion(bench["name"], bench["age"], bench["vis"], bench["eff"], hp, silent=True)
+            if cost and cost <= budget:
+                costs.append(cost)
+                hps.append(hp)
+            else:
+                break
+        
+        # Ensure line is visible even if they die instantly
+        if len(hps) == 0:
+            hps.append(0)
+            costs.append(0)
+            hps.append(hp_range[0])
+            costs.append(budget)
+        
+        if len(hps) > 0:
+            ax2d.plot(hps, costs, label=f"{bench['name']} (Budget: {budget:.2f})", 
+                     color=bench["color"], marker='o', linewidth=2)
+            # Mark death point with skull
+            ax2d.scatter(hps[-1], costs[-1], marker='$\u2620$', color='black', s=250, zorder=5)
+    
+    # Plot custom subject
+    costs = []
+    hps = []
+    budget = np.exp(-0.012 * age) - 0.15
+    
+    for hp in hp_range:
+        cost = activate_delusion(name, age, has_vision, efficiency, hp, silent=True)
+        if cost and cost <= budget:
+            costs.append(cost)
+            hps.append(hp)
+        else:
+            break
+    
+    # Ensure line is visible even if they die instantly
+    if len(hps) == 0:
+        hps.append(0)
+        costs.append(0)
+        hps.append(hp_range[0])
+        costs.append(budget)
+    
+    ax2d.plot(hps, costs, label=f"{name} (Budget: {budget:.2f})", 
+             color="#3498db", marker='o', linewidth=2)
+    
+    if len(hps) > 0:
+        ax2d.scatter(hps[-1], costs[-1], marker='$\u2620$', color='black', s=250, zorder=5)
+    
+    ax2d.axhline(y=0.15, color='red', linestyle='--', alpha=0.5, label="Critical Instability (15%)")
+    ax2d.axhline(y=0, color='red', linestyle='--', alpha=0.5, label="Baseline (0%)")
+    ax2d.set_title(f"Forensic Damage Scaling for {name}")
+    
+    # Use appropriate scaling for HP values
+    if boss_hp >= 1000000:
+        # Scale to millions
+        ax2d.set_xlabel("Total Damage Required (Boss HP, millions)")
+        ax2d.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e6:.1f}M'))
+    elif boss_hp >= 1000:
+        # Scale to thousands
+        ax2d.set_xlabel("Total Damage Required (Boss HP, thousands)")
+        ax2d.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e3:.0f}K'))
+    else:
+        ax2d.set_xlabel("Total Damage Required (Boss HP)")
+    
+    ax2d.set_ylabel("Gavrilov Redundancy Cost (R-Loss)")
+    ax2d.set_ylim(bottom=-0.1, top=1.1)
+    ax2d.legend()
+    ax2d.grid(True, which="both", ls="-", alpha=0.2)
+    
+    # --- 2. Generate 3D Survival Ridge ---
+    fig3d = plt.figure(figsize=(10, 7))
+    ax3d = fig3d.add_subplot(111, projection='3d')
+    
+    efficiencies = np.linspace(0.05, 0.95, 15)
+    hps_3d = np.linspace(100000, int(boss_hp * 1.2), 15)
+    X, Y = np.meshgrid(efficiencies, hps_3d)
+    Z = np.zeros(X.shape)
+    
+    for i in range(len(hps_3d)):
+        for j in range(len(efficiencies)):
+            has_vis = X[i, j] > 0.6
+            result_cost = activate_delusion("Subject", age=25, has_vision=has_vis, 
+                                          efficiency=X[i, j], boss_hp=Y[i, j], silent=True)
+            initial_R = np.exp(-0.012 * 25)
+            if result_cost is not None:
+                remaining = initial_R - result_cost
+                Z[i, j] = max(0.15, remaining)
+            else:
+                Z[i, j] = 0.15
+    
+    surf = ax3d.plot_surface(X, Y, Z, cmap='inferno', edgecolor='none', alpha=0.9)
+    ax3d.set_title("Delusions: The 3D Survival Ridge", fontsize=14)
+    ax3d.set_xlabel("Mastery Efficiency (η)")
+    
+    # Use appropriate scaling for HP values in 3D plot
+    if boss_hp >= 1000000:
+        ax3d.set_ylabel("Combat Load (Boss HP, millions)")
+        ax3d.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e6:.1f}M'))
+    elif boss_hp >= 1000:
+        ax3d.set_ylabel("Combat Load (Boss HP, thousands)")
+        ax3d.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f'{x/1e3:.0f}K'))
+    else:
+        ax3d.set_ylabel("Combat Load (Boss HP)")
+    
+    ax3d.set_zlabel("Biological Redundancy (R)")
+    fig3d.colorbar(surf, ax=ax3d, shrink=0.5, aspect=5, label='Survival Probability')
+    
+    return fig2d, fig3d

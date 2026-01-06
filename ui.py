@@ -1,5 +1,5 @@
 import gradio as gr # type: ignore
-from handlers import reconstruct_irminsul, simulate_triple_comparison
+from handlers import reconstruct_irminsul, simulate_triple_comparison, generate_phase3_plots
 
 # Use darker Collei green (#6b8a26) for theme
 custom_theme = gr.themes.Soft(
@@ -91,4 +91,34 @@ with gr.Blocks(theme=custom_theme) as demo:
                      outputs=plot_out)
 
     with gr.Tab("Phase 3: Delusion Toxicity"):
-        gr.Markdown("Coming soon: Linear Programming Death Boundary...")
+        gr.Markdown("## Project Overview")
+        gr.Markdown(
+            "**Project Pure-Flux | Tactical Mortality Audit**\n\n"
+            "This phase utilizes Constrained Optimization (MILP) to quantify the active destruction caused by Delusion usage. "
+            "We treat a subject's biological life force as a non-renewable currency used to \"purchase\" damage output. "
+            "The model uses `scipy.optimize.linprog` with integrality constraints to solve for the most bio-efficient combat rotation."
+        )
+        gr.Markdown("### Forensic Combat Analysis")
+        gr.Markdown("Compare your subject against benchmark Harbingers (Childe, Arlecchino) and NPC to assess survivability under Delusion load.")
+        
+        with gr.Row():
+            with gr.Column(scale=1):
+                name_in = gr.Textbox(label="Subject Name", value="Traveler")
+                age_in = gr.Slider(15, 70, value=25, step=1, label="Age")
+                eff_in = gr.Slider(0.01, 0.8, value=0.5, step=0.01, label="Mastery Efficiency (η)")
+                vis_in = gr.Checkbox(label="Vision", value=False)
+                hp_in = gr.Slider(0, 1500000, value=500000, step=50000, label="Boss HP")
+                btn_phase3 = gr.Button("Execute Forensic Audit", variant="primary")
+                
+            with gr.Column(scale=2):
+                with gr.Tabs():
+                    with gr.Tab("2D Analysis"):
+                        plot_2d = gr.Plot(label="Cumulative Cost vs. Damage")
+                        gr.Markdown("*The 2D plot shows cumulative biological cost vs. combat output. Skull markers (☠) indicate biological collapse points. Red dashed lines mark critical thresholds.*")
+                    with gr.Tab("3D Survival Ridge"):
+                        plot_3d = gr.Plot(label="Topographic Mortality Mapping")
+                        gr.Markdown("*The 3D surface shows biological redundancy as a function of mastery efficiency and combat load. The \"Death Valley\" at 0.15 represents the critical failure threshold.*")
+                        
+        btn_phase3.click(generate_phase3_plots, 
+                        inputs=[name_in, age_in, vis_in, eff_in, hp_in], 
+                        outputs=[plot_2d, plot_3d])
