@@ -1,4 +1,15 @@
-# DottoreHateClub
+---
+title: Teyvat Biosystems
+emoji: 🔬
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
+# Teyvat Biosystems
 
 A mathematical analysis of biological systems in *Genshin Impact*, focusing on the destructive technologies developed by Il Dottore. This project applies computational methods to model and quantify the effects of Forbidden Knowledge, Eleazar disease, and Delusion technology on human subjects.
 
