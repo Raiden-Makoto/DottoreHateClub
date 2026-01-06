@@ -7,6 +7,36 @@ from Irminsul.trellis import plot_viterbi_trellis
 from Eleazar.eleazar import eleazar_model
 from Delusion.delusion import activate_delusion
 
+def get_benchmark_stats():
+    """Calculate and return stats for the three benchmark subjects"""
+    benchmarks = [
+        {"name": "Childe", "age": 23, "vis": True, "eff": 0.65},
+        {"name": "Arlecchino", "age": 30, "vis": True, "eff": 0.95},
+        {"name": "Foolish NPC", "age": 16, "vis": False, "eff": 0.05}
+    ]
+    
+    stats_text = "### Benchmark Subject Stats\n\n"
+    stats_text += "| Subject | Age | Vision | Efficiency | ER | CD (s) | Q Cost | Budget |\n"
+    stats_text += "|---------|-----|--------|------------|----|----|--------|--------|\n"
+    
+    for bench in benchmarks:
+        age = bench["age"]
+        has_vision = bench["vis"]
+        efficiency = bench["eff"]
+        
+        # Calculate stats using same logic as activate_delusion
+        cooldown = 12 - (5 * efficiency)
+        burst_req = 90 - (10 * efficiency)
+        base_energy = 10 + (17 * efficiency) + (8 * efficiency * efficiency) - 0.34 * age
+        energy_per_E = base_energy * (1.5 if has_vision else 1.0)
+        initial_R = np.exp(-0.012 * age)
+        budget = initial_R - 0.15
+        
+        vis_str = "Yes" if has_vision else "No"
+        stats_text += f"| {bench['name']} | {age} | {vis_str} | {efficiency:.2f} | {energy_per_E:.1f} | {cooldown:.1f} | {burst_req:.0f} | {budget:.3f} |\n"
+    
+    return stats_text
+
 def reconstruct_irminsul(pure_input, withered_input):
     # 1. Validation & Truncation for pure sequence
     valid_elements = ELEMENTS
